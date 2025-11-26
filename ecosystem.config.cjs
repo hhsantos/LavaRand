@@ -3,7 +3,7 @@ module.exports = {
   apps: [{
     name: 'lavarand',
     script: 'serve',
-    args: '-s dist -l 3006', // Servir carpeta dist en puerto 3006 como SPA
+    args: '-s dist -p 3006', // Servir carpeta dist en puerto 3006 como SPA
     instances: 1,
     exec_mode: 'fork',
     cwd: '/var/www/lavarand',
