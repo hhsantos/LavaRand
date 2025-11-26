@@ -19,11 +19,25 @@ const WebcamCanvas = forwardRef<EntropySourceHandle, {}>((props, ref) => {
         throw new Error("Browser API not supported");
       }
 
-      // Use the simplest constraints possible to avoid 'OverconstrainedError'
-      // and to maximize compatibility with system permissions.
-      stream = await navigator.mediaDevices.getUserMedia({ 
-        video: true 
-      });
+      // Use specific constraints optimized for the ZZ3 camera
+      // Try MJPEG format first (better compatibility), fallback to default
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: {
+            width: { ideal: 640, min: 320 },
+            height: { ideal: 480, min: 240 },
+            frameRate: { ideal: 30, min: 10 },
+            facingMode: 'user'
+          },
+          audio: false
+        });
+      } catch (e) {
+        // Fallback to simplest constraints
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: true,
+          audio: false
+        });
+      }
       
       // Check if component unmounted while we were waiting
       if (!videoRef.current) {
@@ -31,10 +45,59 @@ const WebcamCanvas = forwardRef<EntropySourceHandle, {}>((props, ref) => {
         return;
       }
 
+      // Log stream information
+      const videoTrack = stream.getVideoTracks()[0];
+      const settings = videoTrack.getSettings();
+      console.log('Camera stream obtained:', {
+        label: videoTrack.label,
+        settings: settings,
+        capabilities: videoTrack.getCapabilities()
+      });
+      
       videoRef.current.srcObject = stream;
       
-      // Wait for video to actually be ready
+      // Wait for metadata to load before playing
+      await new Promise<void>((resolve, reject) => {
+        if (!videoRef.current) {
+          reject(new Error('Video element lost'));
+          return;
+        }
+        
+        const video = videoRef.current;
+        
+        const onLoadedMetadata = () => {
+          console.log('Video metadata loaded:', {
+            width: video.videoWidth,
+            height: video.videoHeight,
+            readyState: video.readyState
+          });
+          resolve();
+        };
+        
+        const onError = (e: Event) => {
+          console.error('Video error:', e);
+          reject(new Error('Video failed to load'));
+        };
+        
+        video.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+        video.addEventListener('error', onError, { once: true });
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          video.removeEventListener('loadedmetadata', onLoadedMetadata);
+          video.removeEventListener('error', onError);
+          reject(new Error('Video load timeout'));
+        }, 10000);
+      });
+      
+      // Now play the video
       await videoRef.current.play();
+      
+      console.log('Video playing, dimensions:', {
+        videoWidth: videoRef.current.videoWidth,
+        videoHeight: videoRef.current.videoHeight
+      });
+      
       setStreamActive(true);
 
     } catch (err: any) {
@@ -121,10 +184,54 @@ const WebcamCanvas = forwardRef<EntropySourceHandle, {}>((props, ref) => {
         <>
           <video 
             ref={videoRef} 
-            className="absolute inset-0 w-full h-full object-cover transform scale-x-[-1]" 
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ 
+              backgroundColor: '#18181b',
+              transform: 'scaleX(-1)',
+              zIndex: 1
+            }}
             autoPlay
             playsInline 
-            muted 
+            muted
+            onLoadedMetadata={(e) => {
+              const video = e.currentTarget;
+              console.log('Video loaded in DOM:', {
+                videoWidth: video.videoWidth,
+                videoHeight: video.videoHeight,
+                readyState: video.readyState,
+                paused: video.paused,
+                currentTime: video.currentTime
+              });
+              
+              // Test if video is actually rendering by checking pixel data
+              setTimeout(() => {
+                const testCanvas = document.createElement('canvas');
+                testCanvas.width = video.videoWidth;
+                testCanvas.height = video.videoHeight;
+                const testCtx = testCanvas.getContext('2d');
+                if (testCtx) {
+                  testCtx.drawImage(video, 0, 0);
+                  const imageData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height);
+                  const pixels = imageData.data;
+                  let totalBrightness = 0;
+                  for (let i = 0; i < pixels.length; i += 4) {
+                    totalBrightness += (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
+                  }
+                  const avgBrightness = totalBrightness / (pixels.length / 4);
+                  console.log('Video frame analysis:', {
+                    avgBrightness,
+                    totalPixels: pixels.length / 4,
+                    firstPixels: Array.from(pixels.slice(0, 12))
+                  });
+                  
+                  if (avgBrightness < 1) {
+                    console.warn('⚠️ Video is completely black! Camera might not be sending data.');
+                  }
+                }
+              }, 500);
+            }}
+            onPlay={() => console.log('Video started playing')}
+            onError={(e) => console.error('Video element error:', e)}
           />
           <canvas ref={canvasRef} className="hidden" />
           
