@@ -53,15 +53,12 @@ while read oldrev newrev ref; do
     git --work-tree=$TARGET --git-dir=$GIT_DIR checkout -f main || exit 1
     cd $TARGET || exit 1
     [ -f .env ] && export $(cat .env | grep -v '^#' | xargs)
-    log "📦 Install" && pnpm install --frozen-lockfile || exit 1
-    log " Build" && pnpm build || exit 1
+    log "📦 Install (all deps)" && npm install --include=dev || exit 1
+    log "🔨 Build" && npm run build || exit 1
     
-    # PM2 para servir estáticos con 'serve'
-    if pm2 describe lavarand >/dev/null 2>&1; then
-      pm2 reload lavarand
-    else
-      pm2 start serve --name lavarand -- -s dist -l 3005
-    fi
+    # PM2 reload con ecosystem.config.cjs
+    log "🔄 PM2" 
+    pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
     pm2 save && log "✅ Deploy OK"
   fi
 done
