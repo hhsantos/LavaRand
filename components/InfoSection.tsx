@@ -37,41 +37,41 @@ export default function InfoSection() {
     <div className="w-full bg-zinc-900 rounded-xl border border-zinc-800 p-6 shadow-lg">
       <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
         <span className="w-2 h-6 bg-gradient-to-b from-orange-500 to-purple-600 rounded-full"></span>
-        La Criptografía y el Caos
+        Cryptography and Chaos
       </h2>
       <div className="flex flex-col">
         <AccordionItem 
-            title="¿Por qué usar Lámparas de Lava?" 
+            title="Why Use Lava Lamps?" 
             isOpen={openIndex === 0} 
             onClick={() => toggle(0)}
         >
-            Los ordenadores son lógicos y predecibles por diseño, lo cual es malo para la seguridad. Una lámpara de lava es un sistema físico caótico. La "lava" nunca toma la misma forma dos veces. Cloudflare fotografía una pared de 100 lámparas para capturar esta aleatoriedad impredecible y usarla en claves de encriptación.
+            Computers are logical and predictable by design, which is bad for security. A lava lamp is a chaotic physical system. The "lava" never takes the same shape twice. Cloudflare photographs a wall of 100 lamps to capture this unpredictable randomness and use it in encryption keys.
         </AccordionItem>
         
         <AccordionItem 
-            title="¿Qué es la Entropía?" 
+            title="What is Entropy?" 
             isOpen={openIndex === 1} 
             onClick={() => toggle(1)}
         >
-            En criptografía, la entropía es la medida de la imprevisibilidad. Cuanto mayor sea el "desorden" o la incertidumbre, más difícil es adivinar la clave. Si los datos tienen un patrón, no son seguros. Las lámparas de lava, junto con la gente que camina frente a ellas, proporcionan una fuente de entropía extremadamente alta.
+            In cryptography, entropy is the measure of unpredictability. The greater the "disorder" or uncertainty, the harder it is to guess the key. If data has a pattern, it's not secure. Lava lamps, along with people walking in front of them, provide an extremely high source of entropy.
         </AccordionItem>
 
         <AccordionItem 
-            title="¿CSPRNG vs PRNG?" 
+            title="CSPRNG vs PRNG?" 
             isOpen={openIndex === 2} 
             onClick={() => toggle(2)}
         >
-            Un PRNG (Generador de Números Pseudoaleatorios) normal usa una fórmula matemática. Si conoces la "semilla" inicial, puedes predecir todos los números futuros.
+            A regular PRNG (Pseudo-Random Number Generator) uses a mathematical formula. If you know the initial "seed", you can predict all future numbers.
             <br/><br/>
-            Un <strong>CSPRNG</strong> (Criptográficamente Seguro) es más estricto. Debe pasar pruebas estadísticas rigurosas y ser resistente a la ingeniería inversa. Necesita una fuente constante de "semillas" nuevas y verdaderamente aleatorias (como las fotos de las lámparas de lava) para mantenerse seguro.
+            A <strong>CSPRNG</strong> (Cryptographically Secure) is more strict. It must pass rigorous statistical tests and be resistant to reverse engineering. It needs a constant source of new, truly random "seeds" (like photos of lava lamps) to remain secure.
         </AccordionItem>
 
         <AccordionItem 
-            title="La Semilla Criptográfica" 
+            title="The Cryptographic Seed" 
             isOpen={openIndex === 3} 
             onClick={() => toggle(3)}
         >
-            Es el dato inicial que alimenta al generador. Si la semilla es predecible, la clave también lo será. Cloudflare mezcla datos de las lámparas de lava, movimiento de péndulos (Londres) y desintegración radiactiva (Singapur) con datos del sistema Linux para crear semillas que son prácticamente imposibles de replicar.
+            It's the initial data that feeds the generator. If the seed is predictable, the key will be too. Cloudflare mixes data from lava lamps, pendulum motion (London), and radioactive decay (Singapore) with Linux system data to create seeds that are virtually impossible to replicate.
         </AccordionItem>
       </div>
     </div>
