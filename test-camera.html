@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cámara ZZ3</title>
+    <style>
+        body { background: #000; color: #fff; font-family: monospace; padding: 20px; }
+        video { border: 2px solid #0f0; width: 640px; height: 480px; background: #333; }
+        .info { background: #222; padding: 10px; margin: 10px 0; }
+        button { padding: 10px 20px; font-size: 16px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Cámara ZZ3</h1>
+    <button onclick="startCamera()">Iniciar Cámara</button>
+    <button onclick="captureFrame()">Capturar Frame</button>
+    <div class="info" id="info">Haz clic en "Iniciar Cámara"</div>
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas" width="640" height="480" style="border: 2px solid #00f;"></canvas>
+    
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const info = document.getElementById('info');
+        let stream = null;
+
+        async function startCamera() {
+            try {
+                info.innerHTML = 'Solicitando acceso a la cámara...';
+                
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        frameRate: { ideal: 30 }
+                    }
+                });
+                
+                const track = stream.getVideoTracks()[0];
+                const settings = track.getSettings();
+                
+                info.innerHTML = `
+                    <strong>Cámara conectada:</strong><br>
+                    Dispositivo: ${track.label}<br>
+                    Resolución: ${settings.width}x${settings.height}<br>
+                    Frame Rate: ${settings.frameRate} fps<br>
+                    Estado: ${track.readyState}<br>
+                `;
+                
+                video.srcObject = stream;
+                
+                video.onloadedmetadata = () => {
+                    console.log('Video metadata:', {
+                        videoWidth: video.videoWidth,
+                        videoHeight: video.videoHeight,
+                        readyState: video.readyState
+                    });
+                };
+                
+                video.onplay = () => {
+                    info.innerHTML += '<br><strong style="color:#0f0">✓ Video reproduciendo</strong>';
+                    // Auto-capture frame después de 1 segundo
+                    setTimeout(captureFrame, 1000);
+                };
+                
+            } catch (err) {
+                info.innerHTML = `<strong style="color:#f00">Error:</strong> ${err.name} - ${err.message}`;
+                console.error(err);
+            }
+        }
+        
+        function captureFrame() {
+            if (!stream) {
+                alert('Primero inicia la cámara');
+                return;
+            }
+            
+            ctx.drawImage(video, 0, 0, 640, 480);
+            const imageData = ctx.getImageData(0, 0, 640, 480);
+            const pixels = imageData.data;
+            
+            // Analizar brillo
+            let totalBrightness = 0;
+            let blackPixels = 0;
+            
+            for (let i = 0; i < pixels.length; i += 4) {
+                const brightness = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
+                totalBrightness += brightness;
+                if (brightness < 5) blackPixels++;
+            }
+            
+            const avgBrightness = totalBrightness / (pixels.length / 4);
+            const blackPercent = (blackPixels / (pixels.length / 4)) * 100;
+            
+            info.innerHTML += `
+                <br><strong>Análisis del frame:</strong><br>
+                Brillo promedio: ${avgBrightness.toFixed(2)}/255<br>
+                Píxeles negros: ${blackPercent.toFixed(1)}%<br>
+                Primeros píxeles RGB: [${pixels[0]}, ${pixels[1]}, ${pixels[2]}]<br>
+                ${avgBrightness < 1 ? '<strong style="color:#f00">⚠️ IMAGEN COMPLETAMENTE NEGRA</strong>' : '<strong style="color:#0f0">✓ La cámara está capturando luz</strong>'}
+            `;
+        }
+    </script>
+</body>
+</html>
